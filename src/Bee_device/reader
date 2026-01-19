@@ -5,10 +5,11 @@
 #include <Adafruit_PCD8544.h>
 
 // --- Pin Definitions for Teensy 4.0 & Nokia 5110 ---
-const int CLK_PIN  = 13;
-const int DIN_PIN  = 11;
-const int DC_PIN   = 9;
-const int CE_PIN   = 10;
+// --- Pin Definitions for Teensy 4.0 & Nokia 5110 ---
+const int CLK_PIN  = 2;
+const int DIN_PIN  = 3;
+const int DC_PIN   = 4;
+const int CE_PIN   = 5;
 const int RST_PIN  = 8;
 
 Adafruit_PCD8544 display = Adafruit_PCD8544(CLK_PIN, DIN_PIN, DC_PIN, CE_PIN, RST_PIN);
