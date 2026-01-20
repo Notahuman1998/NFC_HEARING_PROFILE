@@ -1,1 +1,110 @@
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_PN532.h>
 
+// --- HARDWARE CONFIGURATION ---
+// I2C Connection
+#define PN532_IRQ   2
+#define PN532_RESET 3
+
+Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+
+// Standard Audiogram Frequencies for display context
+const int FREQUENCIES[] = {125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000};
+const int NUM_POINTS = 11; 
+const int TOTAL_BYTES = 22; // 11 Left + 11 Right
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("--- NTAG HEARING PROFILE READER ---");
+
+  nfc.begin();
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (!versiondata) {
+    Serial.print("Didn't find PN53x board");
+    while (1);
+  }
+  
+  Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
+  
+  nfc.SAMConfig();
+  
+  Serial.println("Waiting for NTAG card...");
+}
+
+void loop() {
+  uint8_t success;
+  uint8_t uid[7];
+  uint8_t uidLength;
+
+  // 1. Wait for card
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+
+  if (success) {
+    Serial.println("\n--------------------------------");
+    Serial.println("Card Detected!");
+    Serial.print("UID: "); nfc.PrintHex(uid, uidLength);
+    
+    // Buffer to hold the read data
+    uint8_t rawData[TOTAL_BYTES];
+    int bytesRead = 0;
+    int currentPage = 4; // User memory starts at Page 4
+    bool readError = false;
+
+    // 2. Read Loop (Pages 4 to 9)
+    // We need 22 bytes. Each page is 4 bytes. 
+    // We need 6 pages total (6 * 4 = 24 bytes) to get our 22 bytes.
+    while (bytesRead < TOTAL_BYTES) {
+      uint8_t pageBuffer[32]; // Library buffer
+      
+      // Read command
+      if (nfc.mifareultralight_ReadPage(currentPage, pageBuffer)) {
+        // Extract the 4 bytes from this page
+        for (int i = 0; i < 4; i++) {
+          if (bytesRead < TOTAL_BYTES) {
+            rawData[bytesRead++] = pageBuffer[i];
+          }
+        }
+        currentPage++;
+      } else {
+        Serial.println("Error reading page!");
+        readError = true;
+        break;
+      }
+    }
+
+    // 3. Display Data
+    if (!readError) {
+      Serial.println("\n--- HEARING PROFILE DECODED ---");
+      
+      // Left Ear (First 11 bytes)
+      Serial.println("\n[ LEFT EAR ]");
+      Serial.println("Freq (Hz)\tThreshold (dB)");
+      Serial.println("---------\t--------------");
+      for (int i = 0; i < NUM_POINTS; i++) {
+        Serial.print(FREQUENCIES[i]);
+        Serial.print("\t\t");
+        Serial.println(rawData[i]);
+      }
+
+      // Right Ear (Next 11 bytes)
+      Serial.println("\n[ RIGHT EAR ]");
+      Serial.println("Freq (Hz)\tThreshold (dB)");
+      Serial.println("---------\t--------------");
+      for (int i = 0; i < NUM_POINTS; i++) {
+        Serial.print(FREQUENCIES[i]);
+        Serial.print("\t\t");
+        // Right ear data starts at index 11
+        Serial.println(rawData[NUM_POINTS + i]);
+      }
+      
+      Serial.println("--------------------------------");
+    } else {
+      Serial.println("Read Failed. Please hold card steady.");
+    }
+
+    // Wait before scanning again
+    delay(5000);
+    Serial.println("\nReady for next card...");
+  }
+}
