@@ -150,11 +150,18 @@
         }
 
         function preparePacket(left, right) {
-            const buffer = new Int8Array(left.length + right.length);
-            buffer.set(left, 0);
-            buffer.set(right, left.length);
+            // *** CRITICAL FIX FOR "251" ERROR ***
+            // Map any negative values (e.g. -5) to 0 before sending to uint8_t array
+            const cleanLeft = left.map(x => x < 0 ? 0 : x);
+            const cleanRight = right.map(x => x < 0 ? 0 : x);
+
+            const buffer = new Uint8Array(cleanLeft.length + cleanRight.length);
+            buffer.set(cleanLeft, 0);
+            buffer.set(cleanRight, cleanLeft.length);
+            
             patientData = buffer;
             checkReady();
+            log("Data prepared (Negatives clamped to 0)");
         }
 
         let chart;
