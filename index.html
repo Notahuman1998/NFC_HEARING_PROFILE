@@ -19,17 +19,30 @@
         <!-- === NEW: TOP BANNER & PULSE INDICATOR === -->
     <header class="w-full max-w-6xl mb-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <!-- Logo Block -->
-            <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg transform transition hover:scale-105">
-                <span class="text-white font-bold text-2xl">S</span>
+            <!-- Logo Block (Updated for Full Image Support) -->
+            <div class="h-16 w-auto min-w-[4rem] flex items-center justify-center transition hover:scale-105 relative">
+                <!-- IMAGE LOGO: Put 'logo.png' in the same folder as this file -->
+                <!-- object-contain ensures the full logo is visible without cropping -->
+                <img src="logo.png" alt="Logo" class="h-full w-auto object-contain" 
+                     onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex'">
+                
+                <!-- FALLBACK: Original 'S' Box (Hidden unless image fails) -->
+                <div id="fallback-logo" class="w-12 h-12 bg-slate-900 rounded-lg items-center justify-center shadow-lg" style="display:none;">
+                    <span class="text-white font-bold text-2xl">S</span>
+                </div>
+                
+                <script>
+                    // Immediate check to ensure fallback shows if no image exists
+                    document.querySelector('img').onerror(); 
+                </script>
             </div>
+            
             <div>
-                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">SAVOX-OTOS <span class="text-slate-400">INTERFACE</span></h1>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">SAVOX <span class="text-slate-400">INTERFACE</span></h1>
                 <p class="text-xs text-slate-500 font-mono tracking-widest uppercase">Tactical Audio Encoding System</p>
             </div>
         </div>
-        
-        <!-- Status Indicator -->
+              <!-- Status Indicator -->
         <div class="text-right hidden md:block">
             <p class="text-sm font-bold text-slate-700">Acoustician Terminal</p>
             <div class="flex items-center gap-2 justify-end mt-1">
